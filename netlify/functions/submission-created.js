@@ -2,15 +2,16 @@
 // Env vars required:
 //   TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID  — Telegram notifications
 //   AMO_CLIENT_ID, AMO_CLIENT_SECRET      — amoCRM OAuth app credentials
-//   AMO_REFRESH_TOKEN                     — initial refresh token (seed for Blobs)
+//   AMO_REFRESH_TOKEN                     — current refresh token (auto-updated after each use)
 //   AMO_DOMAIN                            — e.g. i2club.amocrm.ru
-
-const { getStore } = require('@netlify/blobs');
+//   NETLIFY_SITE_ID, NETLIFY_TOKEN        — for auto-updating AMO_REFRESH_TOKEN
 
 const AMO_DOMAIN    = process.env.AMO_DOMAIN    || 'i2club.amocrm.ru';
 const CLIENT_ID     = process.env.AMO_CLIENT_ID;
 const CLIENT_SECRET = process.env.AMO_CLIENT_SECRET;
 const REDIRECT_URI  = 'https://neon-quokka-6e2125.netlify.app/';
+const SITE_ID       = process.env.NETLIFY_SITE_ID;
+const NETLIFY_TOKEN = process.env.NETLIFY_TOKEN;
 
 const LEVEL_NAMES = [
   'Уровень 0. Одиночка (0–6)',
@@ -21,7 +22,10 @@ const LEVEL_NAMES = [
 
 // ── amoCRM helpers ────────────────────────────────────────────────
 
-async function refreshTokens(refreshToken) {
+async function getFreshAccessToken() {
+  const refreshToken = process.env.AMO_REFRESH_TOKEN;
+  if (!refreshToken) throw new Error('AMO_REFRESH_TOKEN not set');
+
   const res = await fetch(`https://${AMO_DOMAIN}/oauth2/access_token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -34,25 +38,29 @@ async function refreshTokens(refreshToken) {
     }),
   });
   if (!res.ok) throw new Error('amoCRM token refresh failed: ' + await res.text());
-  return res.json();
-}
+  const data = await res.json();
 
-async function getAccessToken(store) {
-  const stored = await store.get('tokens', { type: 'json' }).catch(() => null);
-  const seed   = stored?.refresh_token || process.env.AMO_REFRESH_TOKEN;
-  if (!seed) throw new Error('No refresh token available');
+  // Save new refresh_token to Netlify env (fire-and-forget)
+  if (SITE_ID && NETLIFY_TOKEN && data.refresh_token) {
+    fetch(`https://api.netlify.com/api/v1/sites/${SITE_ID}/env/AMO_REFRESH_TOKEN`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${NETLIFY_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        key: 'AMO_REFRESH_TOKEN',
+        values: [{ context: 'all', value: data.refresh_token }],
+      }),
+    }).catch(e => console.error('Failed to update refresh token:', e));
+  }
 
-  const fresh = await refreshTokens(seed);
-  await store.set('tokens', JSON.stringify({
-    access_token:  fresh.access_token,
-    refresh_token: fresh.refresh_token,
-  }));
-  return fresh.access_token;
+  return data.access_token;
 }
 
 async function amoPost(path, body, token) {
   const res = await fetch(`https://${AMO_DOMAIN}/api/v4${path}`, {
-    method:  'POST',
+    method: 'POST',
     headers: {
       'Content-Type':  'application/json',
       'Authorization': `Bearer ${token}`,
@@ -67,7 +75,7 @@ function detectContactField(contact) {
   if (!contact) return null;
   if (contact.includes('@')) return { field_code: 'EMAIL', values: [{ value: contact, enum_code: 'WORK' }] };
   if (/[\d\+]/.test(contact))  return { field_code: 'PHONE', values: [{ value: contact, enum_code: 'WORK' }] };
-  return null; // telegram or other — handled as note text
+  return null;
 }
 
 // ── Main handler ──────────────────────────────────────────────────
@@ -97,7 +105,6 @@ exports.handler = async function (event) {
       `📊 Балл: ${score} / 22`,
       `🏷 Уровень: ${levelName}`,
     ].join('\n');
-
     await fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -112,32 +119,24 @@ exports.handler = async function (event) {
   }
 
   try {
-    const store       = getStore({
-      name:   'amocrm',
-      siteID: process.env.NETLIFY_SITE_ID,
-      token:  process.env.NETLIFY_TOKEN,
-    });
-    const accessToken = await getAccessToken(store);
+    const accessToken = await getFreshAccessToken();
 
     // Create contact
     const contactField = detectContactField(contact);
-    const contactBody  = [{
+    const contactRes = await amoPost('/contacts', [{
       first_name: name,
       ...(contactField ? { custom_fields_values: [contactField] } : {}),
-    }];
-    const contactRes = await amoPost('/contacts', contactBody, accessToken);
-    const contactId  = contactRes?._embedded?.contacts?.[0]?.id;
+    }], accessToken);
+    const contactId = contactRes?._embedded?.contacts?.[0]?.id;
 
     // Create lead
-    const leadName = `AI-готовность (${score}/22) — ${name}`;
-    const leadBody = [{
-      name: leadName,
+    const leadRes = await amoPost('/leads', [{
+      name: `AI-готовность (${score}/22) — ${name}`,
       ...(contactId ? { _embedded: { contacts: [{ id: contactId }] } } : {}),
-    }];
-    const leadRes = await amoPost('/leads', leadBody, accessToken);
-    const leadId  = leadRes?._embedded?.leads?.[0]?.id;
+    }], accessToken);
+    const leadId = leadRes?._embedded?.leads?.[0]?.id;
 
-    // Add note with full details
+    // Add note
     if (leadId) {
       const noteLines = [`Балл: ${score}/22`, levelName];
       if (contact && !contactField) noteLines.push(`Контакт: ${contact}`);
@@ -149,7 +148,7 @@ exports.handler = async function (event) {
 
     console.log(`amoCRM: contact ${contactId}, lead ${leadId}`);
   } catch (e) {
-    console.error('amoCRM error:', e);
+    console.error('amoCRM error:', e.message);
   }
 
   return { statusCode: 200 };
