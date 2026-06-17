@@ -112,7 +112,11 @@ exports.handler = async function (event) {
   }
 
   try {
-    const store       = getStore('amocrm');
+    const store       = getStore({
+      name:   'amocrm',
+      siteID: process.env.NETLIFY_SITE_ID,
+      token:  process.env.NETLIFY_TOKEN,
+    });
     const accessToken = await getAccessToken(store);
 
     // Create contact
