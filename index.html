@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>AI-готовность команды — мЧЕп</title>
+<meta name="description" content="Экспресс-диагностика: где ИИ у вас уже система, а где ещё привычка одного энтузиаста. 11 вопросов, 4 минуты."/>
+<!--
+  ШРИФТЫ: скопируйте папку .claude/skills/mchep-design/fonts/ в корень проекта как fonts/
+  Netlify не будет знать об этих файлах если они не лежат рядом с index.html.
+-->
+<style>
+/* ── FONTS ── */
+@font-face{font-family:"VS";src:url("fonts/VeranoSans-Light.ttf") format("truetype");font-weight:300;font-display:swap}
+@font-face{font-family:"VS";src:url("fonts/VeranoSans-Regular.ttf") format("truetype");font-weight:400;font-display:swap}
+@font-face{font-family:"VS";src:url("fonts/VeranoSans-Medium.ttf") format("truetype");font-weight:500;font-display:swap}
+@font-face{font-family:"VS";src:url("fonts/VeranoSans-SemiBold.ttf") format("truetype");font-weight:600;font-display:swap}
+@font-face{font-family:"VS";src:url("fonts/VeranoSans-Bold.ttf") format("truetype");font-weight:700;font-display:swap}
+@font-face{font-family:"VS";src:url("fonts/VeranoSans-ExtraBold.ttf") format("truetype");font-weight:800;font-display:swap}
+@font-face{font-family:"VS";src:url("fonts/VeranoSans-Black.ttf") format("truetype");font-weight:900;font-display:swap}
+
+/* ── RESET ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+
+/* ── TOKENS ── */
+:root{
+  --r:#E7011B;
+  --pk:#F0B3DC;
+  --w:#fff;
+  --bg:#000;
+  --paper:#ECECEC;
+  --ink:#1D1D1B;
+  --fg2:rgba(255,255,255,.62);
+  --fg3:rgba(255,255,255,.38);
+  --line:rgba(255,255,255,.13);
+  --line-l:rgba(29,29,27,.13);
+  --f:"VS","Helvetica Neue",Arial,sans-serif;
+}
+
+/* ── BASE ── */
+body{font-family:var(--f);background:var(--bg);color:var(--w);-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+button,input{font-family:inherit}
+
+/* ═══════════════════════════════════════════
+   HERO
+═══════════════════════════════════════════ */
+.hero{
+  min-height:100vh;background:#000;
+  display:flex;flex-direction:column;
+  padding:0 clamp(20px,5vw,64px);
+}
+.hero-header{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:28px 0;
+}
+.hero-meta{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--fg3)}
+
+.hero-body{
+  flex:1;display:flex;flex-direction:column;justify-content:center;
+  padding:20px 0 40px;max-width:960px;
+}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:10px;font-weight:800;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--r);margin-bottom:18px;
+}
+.eyebrow::before{content:"●";font-size:11px}
+
+.hero-h1{
+  font-size:clamp(40px,8.5vw,100px);font-weight:400;
+  line-height:.96;letter-spacing:-.035em;margin-bottom:12px;
+}
+.hero-h1 .dim{color:rgba(255,255,255,.32)}
+.hero-h1 .acc{color:var(--r)}
+
+.hero-sub{
+  font-size:clamp(14px,1.8vw,18px);font-weight:700;
+  color:var(--fg2);line-height:1.45;margin-bottom:36px;max-width:500px;
+}
+
+.stats{display:flex;gap:clamp(20px,4vw,40px);margin-bottom:36px;flex-wrap:wrap}
+.stat-n{font-size:clamp(30px,5vw,52px);font-weight:300;line-height:1}
+.stat-l{font-size:10px;font-weight:400;color:var(--fg3);margin-top:4px;letter-spacing:.04em}
+
+.instr{border:1px solid var(--line);padding:18px 22px;max-width:600px;margin-bottom:36px}
+.instr-t{font-size:13px;font-weight:700;margin-bottom:8px}
+.instr-p{font-size:12px;font-weight:400;line-height:1.65;color:var(--fg2)}
+
+.btn-start{
+  display:inline-flex;align-items:center;gap:10px;
+  background:var(--r);color:var(--w);
+  font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+  padding:14px 28px;border:none;cursor:pointer;
+  transition:opacity .15s;align-self:flex-start;
+}
+.btn-start:hover{opacity:.85}
+.btn-start::after{content:"→";font-size:16px;letter-spacing:0;font-weight:400}
+
+.hero-footer{
+  padding:20px 0;border-top:1px solid var(--line);
+  display:flex;justify-content:space-between;
+  font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--fg3);
+}
+
+/* ═══════════════════════════════════════════
+   QUIZ
+═══════════════════════════════════════════ */
+.quiz{background:var(--paper);color:var(--ink)}
+
+/* sticky top progress */
+.progress-wrap{
+  position:sticky;top:0;z-index:50;
+  background:var(--paper);
+  padding:10px clamp(20px,5vw,64px) 8px;
+  border-bottom:1px solid var(--line-l);
+}
+.progress-track{height:2px;background:rgba(29,29,27,.1);margin-bottom:6px}
+.progress-fill{height:100%;background:var(--r);width:0%;transition:width .3s}
+.progress-meta{display:flex;justify-content:space-between;align-items:center}
+.progress-label{font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(29,29,27,.38)}
+.progress-count{font-size:9px;font-weight:800;color:rgba(29,29,27,.38)}
+.progress-count .red{color:var(--r)}
+
+/* quiz body */
+.quiz-body{padding:36px clamp(20px,5vw,64px) 0;max-width:960px;margin:0 auto}
+.quiz-title{
+  font-size:clamp(28px,4.5vw,44px);font-weight:400;
+  letter-spacing:-.02em;line-height:1.05;margin-bottom:32px;
+}
+
+/* block header */
+.blk-hdr{display:flex;align-items:baseline;gap:8px;margin-top:24px;margin-bottom:8px}
+.blk-num{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#FD5FC8}
+.blk-name{font-size:13px;font-weight:400;color:rgba(29,29,27,.9)}
+.blk-sub{font-size:11px;font-weight:400;color:rgba(29,29,27,.42)}
+.blk-hr{border:none;border-top:1px solid var(--line-l);margin-bottom:14px}
+
+/* question */
+.q{margin-bottom:16px}
+.q-hdr{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px}
+.q-circle{
+  width:20px;height:20px;border-radius:50%;
+  border:1.5px solid rgba(29,29,27,.28);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:8px;font-weight:700;color:rgba(29,29,27,.55);margin-top:1px;
+  transition:border-color .2s,background .2s,color .2s;
+}
+.q-circle.done{border-color:var(--r);background:var(--r);color:#fff}
+.q-txt{font-size:13px;font-weight:400;color:rgba(29,29,27,.85);line-height:1.35;padding-top:1px}
+
+/* options */
+.opts{display:flex;gap:6px;margin-left:30px;flex-wrap:wrap}
+.opt{
+  flex:1;min-width:130px;
+  display:flex;align-items:center;gap:6px;
+  border:1px solid rgba(29,29,27,.18);
+  padding:8px 10px;cursor:pointer;user-select:none;
+  transition:border-color .12s,background .12s;
+}
+.opt:hover{border-color:rgba(29,29,27,.4)}
+.opt.sel{border-color:var(--r);background:rgba(231,1,27,.05)}
+
+.opt-radio{
+  width:13px;height:13px;border-radius:50%;
+  border:1.5px solid rgba(29,29,27,.35);flex-shrink:0;
+  transition:border-color .12s,background .12s;
+}
+.opt.sel .opt-radio{background:var(--r);border-color:var(--r)}
+
+.opt-lbl{
+  font-size:9.5px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.02em;color:rgba(29,29,27,.72);flex:1;line-height:1.2;
+}
+.opt-sc{
+  width:18px;height:18px;border-radius:50%;
+  border:1px solid rgba(29,29,27,.2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:9.5px;font-weight:700;color:rgba(29,29,27,.35);flex-shrink:0;
+  transition:border-color .12s,color .12s;
+}
+.opt.sel .opt-sc{border-color:var(--r);color:var(--r)}
+
+/* sticky bottom submit bar */
+.quiz-footer{
+  position:sticky;bottom:0;
+  background:rgba(236,236,236,.95);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-top:1px solid var(--line-l);
+  padding:12px clamp(20px,5vw,64px);
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  margin-top:20px;
+}
+.quiz-footer-hint{font-size:11px;font-weight:700;color:rgba(29,29,27,.45)}
+.quiz-footer-hint .cnt{color:var(--ink);font-weight:800}
+
+.btn-submit{
+  display:inline-flex;align-items:center;gap:10px;
+  background:rgba(29,29,27,.12);color:rgba(29,29,27,.35);
+  font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+  padding:12px 24px;border:none;cursor:not-allowed;
+  transition:background .2s,color .2s,opacity .2s;white-space:nowrap;
+}
+.btn-submit.active{background:var(--r);color:var(--w);cursor:pointer}
+.btn-submit.active:hover{opacity:.87}
+.btn-submit::after{content:"→";font-size:14px;letter-spacing:0;font-weight:400}
+
+/* ═══════════════════════════════════════════
+   RESULTS
+═══════════════════════════════════════════ */
+.results{background:#000;color:var(--w);padding:64px clamp(20px,5vw,64px)}
+.results-inner{max-width:960px;margin:0 auto}
+
+.pink-eyebrow{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:10px;font-weight:800;letter-spacing:.1em;
+  text-transform:uppercase;color:#FD5FC8;margin-bottom:10px;
+}
+.pink-eyebrow::before{content:"●";font-size:11px}
+
+.red-eyebrow{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:10px;font-weight:800;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--r);margin-bottom:10px;
+}
+.red-eyebrow::before{content:"●";font-size:11px}
+
+.r-title{font-size:clamp(24px,4vw,40px);font-weight:400;letter-spacing:-.02em;margin-bottom:4px}
+.r-desc{font-size:12px;color:var(--fg3);margin-bottom:18px}
+
+.score-row{display:flex;align-items:center;gap:18px;margin-bottom:28px}
+.score-box{
+  display:flex;align-items:baseline;gap:2px;
+  border:1.5px solid rgba(255,255,255,.22);padding:10px 20px;min-width:110px;
+}
+.sv{font-size:clamp(36px,6vw,54px);font-weight:300;color:var(--r);line-height:1;min-width:36px;text-align:right}
+.sm{font-size:18px;font-weight:300;color:var(--fg3);line-height:1}
+.score-hint{font-size:12px;color:var(--fg2);line-height:1.55}
+
+/* decision dots */
+.dec-dots{display:flex;gap:16px;align-items:center;margin-bottom:4px;padding-left:2px}
+.dec-dots span{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.18);display:inline-block}
+.dec-dots span.on{background:var(--pk)}
+.dec-label{
+  font-size:8px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+  color:rgba(255,255,255,.26);margin-bottom:18px;
+}
+
+/* levels list */
+.lvls{display:flex;flex-direction:column;gap:5px;margin-bottom:20px}
+.lvl{
+  display:grid;grid-template-columns:80px 1fr;gap:12px;align-items:center;
+  padding:10px 14px;border:1px solid rgba(255,255,255,.1);
+  transition:border-color .25s,background .25s;
+}
+.lvl.active{border-color:var(--r);background:rgba(231,1,27,.08)}
+.lvl-range{font-size:14px;font-weight:700;color:var(--r);line-height:1}
+.lvl-n{font-size:12px;font-weight:700;color:rgba(255,255,255,.88);margin-bottom:2px}
+.lvl-d{font-size:10px;font-weight:400;color:var(--fg3);line-height:1.3}
+
+/* level detail */
+.lvl-detail{
+  display:none;
+  border:1px solid rgba(255,255,255,.12);
+  padding:20px 24px;margin-top:4px;margin-bottom:40px;
+}
+.ld-name{font-size:clamp(18px,3vw,28px);font-weight:400;letter-spacing:-.02em;margin-bottom:10px}
+.ld-text{font-size:13px;font-weight:400;line-height:1.7;color:var(--fg2);max-width:620px}
+
+.results-hr{border:none;border-top:1px solid var(--line);margin:40px 0}
+
+/* ── LEAD FORM ── */
+.lead-title{font-size:clamp(22px,3.5vw,34px);font-weight:400;letter-spacing:-.02em;margin-bottom:8px}
+.lead-sub{font-size:13px;font-weight:700;line-height:1.6;color:rgba(255,255,255,.68);max-width:480px;margin-bottom:24px}
+
+.lead-form-wrap{max-width:480px}
+
+/* Netlify bot-detection static form (hidden) */
+.netlify-detect{display:none}
+
+.field{margin-bottom:10px}
+.field input{
+  width:100%;background:transparent;
+  border:1px solid rgba(255,255,255,.22);color:var(--w);
+  font-family:var(--f);font-size:14px;font-weight:400;
+  padding:13px 16px;outline:none;
+  transition:border-color .15s;
+}
+.field input::placeholder{color:var(--fg3)}
+.field input:focus{border-color:rgba(255,255,255,.5)}
+
+.btn-lead{
+  width:100%;display:flex;align-items:center;justify-content:center;gap:10px;
+  background:var(--r);color:var(--w);
+  font-family:var(--f);font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+  padding:14px;border:none;cursor:pointer;
+  transition:opacity .15s;margin-top:4px;
+}
+.btn-lead:hover{opacity:.87}
+.btn-lead:disabled{opacity:.5;cursor:not-allowed}
+.btn-lead::after{content:"→";font-size:15px;letter-spacing:0;font-weight:400}
+.field-note{font-size:10px;color:var(--fg3);margin-top:8px;line-height:1.5}
+
+/* thank-you */
+.thank-you{display:none;max-width:480px}
+.ty-check{
+  width:40px;height:40px;border-radius:50%;background:var(--r);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;margin-bottom:16px;color:#fff;
+}
+.ty-title{font-size:clamp(18px,2.5vw,26px);font-weight:400;letter-spacing:-.02em;margin-bottom:8px}
+.ty-body{font-size:13px;color:var(--fg2);line-height:1.65}
+
+/* ═══════════════════════════════════════════
+   CONTACTS / FOOTER
+═══════════════════════════════════════════ */
+.cta-section{
+  background:#000;border-top:1px solid var(--line);
+  padding:60px clamp(20px,5vw,64px);
+}
+.cta-inner{max-width:960px;margin:0 auto}
+
+.big-quote{
+  font-size:clamp(20px,3.5vw,32px);font-weight:700;
+  line-height:1.25;letter-spacing:-.02em;color:var(--r);
+  margin-bottom:8px;max-width:600px;
+}
+.big-quote::before{content:"«"}
+.big-quote::after{content:"»"}
+.q-author{
+  display:inline-flex;align-items:center;
+  font-size:10px;font-weight:800;letter-spacing:.06em;
+  text-transform:uppercase;color:rgba(255,255,255,.28);
+  margin-bottom:48px;
+}
+
+.contacts{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+  gap:16px 32px;margin-bottom:40px;
+}
+.cf-lbl{font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--fg3);margin-bottom:6px}
+.cf-val{
+  font-size:15px;font-weight:400;color:rgba(255,255,255,.72);
+  border-bottom:1px solid rgba(255,255,255,.16);padding-bottom:8px;
+}
+.cf-val a:hover{color:var(--w)}
+
+.site-footer{
+  display:flex;justify-content:space-between;align-items:center;
+  padding-top:20px;border-top:1px solid var(--line);
+  font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--fg3);
+}
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════ */
+@media(max-width:640px){
+  .opts{flex-direction:column}
+  .opt{min-width:0}
+  .quiz-footer{flex-wrap:wrap}
+  .quiz-footer-hint{flex:1 1 100%;text-align:center;order:2}
+  .btn-submit{flex:1;justify-content:center}
+  .stats{gap:16px}
+  .lvl{grid-template-columns:64px 1fr;gap:8px}
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════
+     HERO
+════════════════════════════════════════ -->
+<section class="hero" id="top">
+  <header class="hero-header">
+    <svg width="110" height="27" viewBox="0 0 452 111" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M402.081 24.8982H390.251C380.628 24.8982 372.741 32.7853 372.741 42.4075V80.1078H383.31V42.4075C383.31 38.6217 386.465 35.4669 390.251 35.4669H402.081C405.867 35.4669 409.022 38.6217 409.022 42.4075V80.1078H419.591V42.4075C419.591 32.7853 411.703 24.8982 402.081 24.8982Z" fill="white"/>
+      <path d="M396.25 0C365.963 0 341.355 24.7655 341.355 55.0519C341.355 85.3383 365.963 110.104 396.25 110.104C426.536 110.104 451.144 85.3383 451.144 55.0519C451.144 24.7655 426.536 0 396.25 0ZM396.25 99.6929C371.8 99.6929 351.924 79.6597 351.924 55.2097C351.924 30.7597 371.8 10.7264 396.25 10.7264C420.7 10.7264 440.575 30.7597 440.575 55.2097C440.575 79.6597 420.7 99.6929 396.25 99.6929Z" fill="white"/>
+      <path d="M252.547 18.8006H322.742V2.71094H227.308V47.1941H210.43V3.02643H210.272L194.183 2.86865V47.1941H153.328C148.438 47.1941 144.494 43.2506 144.494 38.3606V2.86865H128.404V38.3606C128.404 52.0841 139.604 63.4415 153.328 63.4415H194.34V107.767H210.43V63.4415H227.308V107.925H322.742V91.8351H252.547C247.342 91.8351 243.24 87.8915 243.24 83.0015V63.5993H310.123V47.5096H243.24V28.1074C243.24 23.2174 247.342 19.2738 252.547 19.2738V18.8006Z" fill="white"/>
+      <path d="M54.8942 0C24.6077 0 0 24.7655 0 55.0519C0 85.3383 24.6077 110.104 54.8942 110.104C85.1806 110.104 109.788 85.3383 109.788 55.0519C109.788 24.7655 85.1806 0 54.8942 0ZM54.8942 99.6929C30.4442 99.6929 10.5687 79.6597 10.5687 55.2097C10.5687 30.7597 30.4442 10.7264 54.8942 10.7264C79.3441 10.7264 99.2196 30.7597 99.2196 55.2097C99.2196 79.6597 79.3441 99.6929 54.8942 99.6929Z" fill="white"/>
+      <path d="M55.0542 54.7496L39.4378 26.0405H26.1875V79.0417H36.4407V41.657L48.5868 63.8985C49.8488 66.2647 52.3726 67.8421 55.212 67.8421C58.0513 67.8421 60.4175 66.2647 61.8372 63.8985L73.9833 41.657V78.8841H84.2365V25.8828H70.9862L55.3697 54.5918L55.0542 54.7496Z" fill="white"/>
+    </svg>
+    <div class="hero-meta">Экспресс-диагностика · 4 минуты</div>
+  </header>
+
+  <div class="hero-body">
+    <div class="eyebrow">мЧЕп · AI-готовность</div>
+    <h1 class="hero-h1">
+      AI-готовность <span class="dim">команды</span><br>
+      <span class="acc">экспресс-диагностика</span>
+    </h1>
+    <p class="hero-sub">Где ИИ у вас уже система,<br>а где ещё привычка одного энтузиаста.</p>
+
+    <div class="stats">
+      <div><div class="stat-n">11</div><div class="stat-l">вопросов</div></div>
+      <div><div class="stat-n">4</div><div class="stat-l">блока</div></div>
+      <div><div class="stat-n">22</div><div class="stat-l">макс. балл</div></div>
+      <div><div class="stat-n">4</div><div class="stat-l">уровня</div></div>
+    </div>
+
+    <div class="instr">
+      <div class="instr-t">Как пройти</div>
+      <p class="instr-p">Отметьте по одному варианту в каждом из 11 вопросов. Справа у каждого ответа — число (0, 1 или 2). Сложите отмеченные числа: сумма от 0 до 22 — это ваш уровень AI-готовности. Расшифровка появится сразу после ответов.</p>
+    </div>
+
+    <a href="#quiz" class="btn-start">Начать диагностику</a>
+  </div>
+
+  <footer class="hero-footer">
+    <span>@Ivancheremnykh</span>
+    <span>мЧЕп · mchep.ru</span>
+  </footer>
+</section>
+
+<!-- ════════════════════════════════════════
+     QUIZ
+════════════════════════════════════════ -->
+<section class="quiz" id="quiz">
+
+  <!-- sticky progress bar -->
+  <div class="progress-wrap">
+    <div class="progress-track">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+    <div class="progress-meta">
+      <span class="progress-label">Прогресс диагностики</span>
+      <span class="progress-count"><span class="red" id="progress-n">0</span>&nbsp;/&nbsp;11</span>
+    </div>
+  </div>
+
+  <div class="quiz-body">
+    <h2 class="quiz-title">Отметьте, как есть<br>на самом деле</h2>
+
+    <!-- ── БЛОК 1 ── -->
+    <div class="blk-hdr">
+      <span class="blk-num">БЛОК 1</span>
+      <span class="blk-name">Концентрация</span>
+      <span class="blk-sub">— где живёт ИИ</span>
+    </div>
+    <hr class="blk-hr"/>
+
+    <div class="q">
+      <div class="q-hdr"><div class="q-circle" id="qc1">1</div><div class="q-txt">ИИ в компании пользуется</div></div>
+      <div class="opts">
+        <div class="opt" data-q="1" data-v="0" onclick="pick(1,0,this)"><div class="opt-radio"></div><span class="opt-lbl">Один человек</span><span class="opt-sc">0</span></div>
+        <div class="opt" data-q="1" data-v="1" onclick="pick(1,1,this)"><div class="opt-radio"></div><span class="opt-lbl">Несколько энтузиастов</span><span class="opt-sc">1</span></div>
+        <div class="opt" data-q="1" data-v="2" onclick="pick(1,2,this)"><div class="opt-radio"></div><span class="opt-lbl">Большинство в своих процессах</span><span class="opt-sc">2</span></div>
+      </div>
+    </div>
+
+    <div class="q">
+      <div class="q-hdr"><div class="q-circle" id="qc2">2</div><div class="q-txt">Если завтра этот человек уйдёт, практика ИИ</div></div>
+      <div class="opts">
+        <div class="opt" data-q="2" data-v="0" onclick="pick(2,0,this)"><div class="opt-radio"></div><span class="opt-lbl">Исчезнет</span><span class="opt-sc">0</span></div>
+        <div class="opt" data-q="2" data-v="1" onclick="pick(2,1,this)"><div class="opt-radio"></div><span class="opt-lbl">Просядет</span><span class="opt-sc">1</span></div>
+        <div class="opt" data-q="2" data-v="2" onclick="pick(2,2,this)"><div class="opt-radio"></div><span class="opt-lbl">Останется</span><span class="opt-sc">2</span></div>
+      </div>
+    </div>
+
+    <!-- ── БЛОК 2 ── -->
+    <div class="blk-hdr" style="margin-top:24px">
+      <span class="blk-num">БЛОК 2</span>
+      <span class="blk-name">Глубина</span>
+      <span class="blk-sub">— как пользуются</span>
+    </div>
+    <hr class="blk-hr"/>
+
+    <div class="q">
+      <div class="q-hdr"><div class="q-circle" id="qc3">3</div><div class="q-txt">Типовая задача для ИИ у нас</div></div>
+      <div class="opts">
+        <div class="opt" data-q="3" data-v="0" onclick="pick(3,0,this)"><div class="opt-radio"></div><span class="opt-lbl">«Напиши пост / письмо»</span><span class="opt-sc">0</span></div>
+        <div class="opt" data-q="3" data-v="1" onclick="pick(3,1,this)"><div class="opt-radio"></div><span class="opt-lbl">Разовая аналитика</span><span class="opt-sc">1</span></div>
+        <div class="opt" data-q="3" data-v="2" onclick="pick(3,2,this)"><div class="opt-radio"></div><span class="opt-lbl">Цепочки и проверка гипотез</span><span class="opt-sc">2</span></div>
+      </div>
+    </div>
+
+    <div class="q">
+      <div class="q-hdr"><div class="q-circle" id="qc4">4</div><div class="q-txt">Команда понимает, где ИИ врёт и что перепроверять</div></div>
+      <div class="opts">
+        <div class="opt" data-q="4" data-v="0" onclick="pick(4,0,this)"><div class="opt-radio"></div><span class="opt-lbl">Нет</span><span class="opt-sc">0</span></div>
+        <div class="opt" data-q="4" data-v="1" onclick="pick(4,1,this)"><div class="opt-radio"></div><span class="opt-lbl">Интуитивно</span><span class="opt-sc">1</span></div>
+        <div class="opt" data-q="4" data-v="2" onclick="pick(4,2,this)"><div class="opt-radio"></div><span class="opt-lbl">Осознанно</span><span class="opt-sc">2</span></div>
+      </div>
+    </div>
+
+    <!-- ── БЛОК 3 ── -->
+    <div class="blk-hdr" style="margin-top:24px">
+      <span class="blk-num">БЛОК 3</span>
+      <span class="blk-name">Система</span>
+      <span class="blk-sub">— зашито ли в процессы</span>
+    </div>
+    <hr class="blk-hr"/>
+
+    <div class="q">
+      <div class="q-hdr"><div class="q-circle" id="qc5">5</div><div class="q-txt">В продажах ИИ используется</div></div>
+      <div class="opts">
+        <div class="opt" data-q="5" data-v="0" onclick="pick(5,0,this)"><div class="opt-radio"></div><span class="opt-lbl">Никак</span><span class="opt-sc">0</span></div>
+        <div class="opt" data-q="5" data-v="1" onclick="pick(5,1,this)"><div class="opt-radio"></div><span class="opt-lbl">Точечно</span><span class="opt-sc">1</span></div>
+        <div class="opt" data-q="5" data-v="2" onclick="pick(5,2,this)"><div class="opt-radio"></div><span class="opt-lbl">Встроен в процесс</span><span class="opt-sc">2</span></div>
+      </div>
+    </div>
+
+    <div class="q">
+      <div class="q-hdr"><div class="q-circle" id="qc6">6</div><div class="q-txt">В маркетинге ИИ используется</div></div>
+      <div class="opts">
+        <div class="opt" data-q="6" data-v="0" onclick="pick(6,0,this)"><div class="opt-radio"></div><span class="opt-lbl">Никак</span><span class="opt-sc">0</span></div>
+        <div class="opt" data-q="6" data-v="1" onclick="pick(6,1,this)"><div class="opt-radio"></div><span class="opt-lbl">Точечно</span><span class="opt-sc">1</span></div>
+        <div class="opt" data-q="6" data-v="2" onclick="pick(6,2,this)"><div class="opt-radio"></div><span class="opt-lbl">Встроен в процесс</span><span class="opt-sc">2</span></div>
+      </div>
+    </div>
+
+    <div class="q">
+      <div class="q-hdr"><div class="q-circle" id="qc7">7</div><div class="q-txt">Стандарт: что можно грузить в ИИ, что нельзя (данные, безопасность)</div></div>
+      <div class="opts">
+        <div class="opt" data-q="7" data-v="0" onclick="pick(7,0,this)"><div class="opt-radio"></div><span class="opt-lbl">Нет</span><span class="opt-sc">0</span></div>
+        <div class="opt" data-q="7" data-v="1" onclick="pick(7,1,this)"><div class="opt-radio"></div><span class="opt-lbl">На словах</span><span class="opt-sc">1</span></div>
+        <div class="opt" data-q="7" data-v="2" onclick="pick(7,2,this)"><div class="opt-radio"></div><span class="opt-lbl">Зафиксирован</span><span class="opt-sc">2</span></div>
+      </div>
+    </div>
+
+    <div class="q">
+      <div class="q-hdr"><div class="q-circle" id="qc8">8</div><div class="q-txt">Новый сотрудник узнаёт, как мы используем ИИ</div></div>
+      <div class="opts">
+        <div class="opt" data-q="8" data-v="0" onclick="pick(8,0,this)"><div class="opt-radio"></div><span class="opt-lbl">Никак</span><span class="opt-sc">0</span></div>
+        <div class="opt" data-q="8" data-v="1" onclick="pick(8,1,this)"><div class="opt-radio"></div><span class="opt-lbl">От коллег</span><span class="opt-sc">1</span></div>
+        <div class="opt" data-q="8" data-v="2" onclick="pick(8,2,this)"><div class="opt-radio"></div><span class="opt-lbl">Есть онбординг</span><span class="opt-sc">2</span></div>
+      </div>
+    </div>
+
+    <!-- ── БЛОК 4 ── -->
+    <div class="blk-hdr" style="margin-top:24px">
+      <span class="blk-num">БЛОК 4</span>
+      <span class="blk-name">Управление</span>
+      <span class="blk-sub">— есть ли рамка</span>
+    </div>
+    <hr class="blk-hr"/>
+
+    <div class="q">
+      <div class="q-hdr"><div class="q-circle" id="qc9">9</div><div class="q-txt">Кто-то отвечает за внедрение ИИ как за задачу</div></div>
+      <div class="opts">
+        <div class="opt" data-q="9" data-v="0" onclick="pick(9,0,this)"><div class="opt-radio"></div><span class="opt-lbl">Нет</span><span class="opt-sc">0</span></div>
+        <div class="opt" data-q="9" data-v="1" onclick="pick(9,1,this)"><div class="opt-radio"></div><span class="opt-lbl">Номинально</span><span class="opt-sc">1</span></div>
+        <div class="opt" data-q="9" data-v="2" onclick="pick(9,2,this)"><div class="opt-radio"></div><span class="opt-lbl">Да, с целью</span><span class="opt-sc">2</span></div>
+      </div>
+    </div>
+
+    <div class="q">
+      <div class="q-hdr"><div class="q-circle" id="qc10">10</div><div class="q-txt">Понимаем, на чём конкретно ИИ экономит деньги / время</div></div>
+      <div class="opts">
+        <div class="opt" data-q="10" data-v="0" onclick="pick(10,0,this)"><div class="opt-radio"></div><span class="opt-lbl">Нет</span><span class="opt-sc">0</span></div>
+        <div class="opt" data-q="10" data-v="1" onclick="pick(10,1,this)"><div class="opt-radio"></div><span class="opt-lbl">По ощущениям</span><span class="opt-sc">1</span></div>
+        <div class="opt" data-q="10" data-v="2" onclick="pick(10,2,this)"><div class="opt-radio"></div><span class="opt-lbl">Измеряем</span><span class="opt-sc">2</span></div>
+      </div>
+    </div>
+
+    <div class="q">
+      <div class="q-hdr"><div class="q-circle" id="qc11">11</div><div class="q-txt">За последние полгода ИИ изменил хоть один наш процесс</div></div>
+      <div class="opts">
+        <div class="opt" data-q="11" data-v="0" onclick="pick(11,0,this)"><div class="opt-radio"></div><span class="opt-lbl">Нет</span><span class="opt-sc">0</span></div>
+        <div class="opt" data-q="11" data-v="1" onclick="pick(11,1,this)"><div class="opt-radio"></div><span class="opt-lbl">Чуть-чуть</span><span class="opt-sc">1</span></div>
+        <div class="opt" data-q="11" data-v="2" onclick="pick(11,2,this)"><div class="opt-radio"></div><span class="opt-lbl">Да, заметно</span><span class="opt-sc">2</span></div>
+      </div>
+    </div>
+
+  </div><!-- /.quiz-body -->
+
+  <!-- sticky bottom CTA -->
+  <div class="quiz-footer">
+    <span class="quiz-footer-hint">Отвечено:&nbsp;<span class="cnt" id="footer-cnt">0</span>&nbsp;из&nbsp;11</span>
+    <button class="btn-submit" id="btn-submit" disabled onclick="showResults()">Показать результат</button>
+  </div>
+
+</section>
+
+<!-- ════════════════════════════════════════
+     RESULTS
+════════════════════════════════════════ -->
+<section class="results" id="results">
+  <div class="results-inner">
+
+    <!-- score -->
+    <div class="pink-eyebrow">Подсчёт</div>
+    <div class="r-title">Сложите баллы</div>
+    <div class="r-desc">Сумма чисел у отмеченных ответов. Минимум — 0, максимум — 22.</div>
+    <div class="score-row">
+      <div class="score-box">
+        <div class="sv" id="sv">–</div>
+        <div class="sm">&thinsp;/ 22</div>
+      </div>
+      <div class="score-hint">— ваш балл<br>уровень смотрите ниже</div>
+    </div>
+
+    <!-- decision dots -->
+    <div class="dec-dots"><span></span><span class="on"></span><span></span></div>
+    <div class="dec-label">Точка решения — здесь становится видно, система у вас или привычка</div>
+
+    <!-- levels -->
+    <div class="lvls" id="lvls">
+      <div class="lvl" data-min="0"  data-max="6">
+        <div class="lvl-range">0–6</div>
+        <div><div class="lvl-n">Уровень 0. Одиночка</div><div class="lvl-d">ИИ держится на одном человеке</div></div>
+      </div>
+      <div class="lvl" data-min="7"  data-max="13">
+        <div class="lvl-range">7–13</div>
+        <div><div class="lvl-n">Уровень 1. Стихия</div><div class="lvl-d">пользуются многие, но каждый как умеет</div></div>
+      </div>
+      <div class="lvl" data-min="14" data-max="18">
+        <div class="lvl-range">14–18</div>
+        <div><div class="lvl-n">Уровень 2. Островки</div><div class="lvl-d">есть участки, но нет рамки</div></div>
+      </div>
+      <div class="lvl" data-min="19" data-max="22">
+        <div class="lvl-range">19–22</div>
+        <div><div class="lvl-n">Уровень 3. AI-готовая команда</div><div class="lvl-d">ИИ зашит в процессы, есть отдача</div></div>
+      </div>
+    </div>
+
+    <!-- expanded level description (revealed after score) -->
+    <div class="lvl-detail" id="lvl-detail">
+      <div class="pink-eyebrow" id="ld-badge">0–6 баллов</div>
+      <div class="ld-name" id="ld-name"></div>
+      <p class="ld-text" id="ld-text"></p>
+    </div>
+
+    <hr class="results-hr" id="results-hr" style="display:none"/>
+
+    <!-- ── LEAD FORM ── -->
+    <div id="lead-section" style="display:none">
+
+      <!-- Netlify form detection: must be present in static HTML -->
+      <form class="netlify-detect" name="ai-leads" netlify netlify-honeypot="bot-field">
+        <input type="text"   name="name"/>
+        <input type="text"   name="contact"/>
+        <input type="hidden" name="score"/>
+        <input type="hidden" name="level"/>
+        <input type="hidden" name="level-name"/>
+      </form>
+
+      <div id="lead-form-wrap">
+        <div class="red-eyebrow">Следующий шаг</div>
+        <div class="lead-title">Узнали свой уровень —<br>что дальше</div>
+        <p class="lead-sub">Если хотите разобрать результат и понять, с чего конкретно начать переход на следующий уровень, напишите нам.</p>
+
+        <div class="lead-form-wrap">
+          <form id="lead-form" novalidate>
+            <p style="display:none"><label>Не заполнять: <input name="bot-field"/></label></p>
+            <input type="hidden" name="form-name" value="ai-leads"/>
+            <input type="hidden" name="score"      id="f-score"/>
+            <input type="hidden" name="level"      id="f-level"/>
+            <input type="hidden" name="level-name" id="f-level-name"/>
+
+            <div class="field">
+              <input type="text" name="name" id="f-name" placeholder="Имя" autocomplete="name" required/>
+            </div>
+            <div class="field">
+              <input type="text" name="contact" id="f-contact" placeholder="Телефон или Telegram" required/>
+            </div>
+            <button type="submit" class="btn-lead" id="btn-lead">Получить разбор результата</button>
+            <p class="field-note">Отвечаем в Телеграм в течение дня. Данные не передаём третьим лицам.</p>
+          </form>
+        </div>
+      </div>
+
+      <div class="thank-you" id="thank-you">
+        <div class="ty-check">✓</div>
+        <div class="ty-title">Заявка принята</div>
+        <p class="ty-body">Свяжемся с вами в Телеграм — разберём ваш результат и предложим конкретный первый шаг.</p>
+      </div>
+
+    </div><!-- /#lead-section -->
+  </div><!-- /.results-inner -->
+</section>
+
+<!-- ════════════════════════════════════════
+     CTA / CONTACTS
+════════════════════════════════════════ -->
+<section class="cta-section">
+  <div class="cta-inner">
+    <p class="big-quote">Большинство застрянет на уровне 2 и будет думать, что всё в порядке.<br>В этом и риск.</p>
+    <div class="q-author">@Ivancheremnykh</div>
+
+    <div class="contacts">
+      <div>
+        <div class="cf-lbl">Телеграм</div>
+        <div class="cf-val"><a href="https://t.me/Ivancheremnykh">@Ivancheremnykh</a></div>
+      </div>
+      <div>
+        <div class="cf-lbl">Почта</div>
+        <div class="cf-val"><a href="mailto:info@mchep.ru">info@mchep.ru</a></div>
+      </div>
+      <div>
+        <div class="cf-lbl">Сайт</div>
+        <div class="cf-val"><a href="https://mchep.ru" target="_blank" rel="noopener">mchep.ru</a></div>
+      </div>
+    </div>
+
+    <footer class="site-footer">
+      <span>@Ivancheremnykh</span>
+      <span>мЧЕп · mchep.ru</span>
+    </footer>
+  </div>
+</section>
+
+<script>
+const answers = {};
+
+const LEVELS = [
+  {
+    range: '0–6',
+    name:  'Уровень 0. Одиночка',
+    desc:  'ИИ у вас есть. Компании от него — почти ничего. Всё держится на одном человеке, и если он завтра уйдёт, уйдёт и вся практика. Это не внедрение. Это его личная привычка. Хорошая новость: вы на старте, и обогнать тех, кто застрял выше, отсюда проще, чем кажется.'
+  },
+  {
+    range: '7–13',
+    name:  'Уровень 1. Стихия',
+    desc:  'Пользуются уже многие — но каждый как умеет. Кто-то ускорился, кто-то генерит ерунду и не замечает. Пользы вы недобираете, а рисков не видите вообще. Это живой, рабочий хаос. Из него получается система — но сам он ею не станет.'
+  },
+  {
+    range: '14–18',
+    name:  'Уровень 2. Островки',
+    desc:  'У вас есть участки, где ИИ реально работает. И именно поэтому вам кажется, что всё в порядке. Это самый коварный уровень. Островки есть, рамок нет: ни стандарта, ни ответственного, ни понимания, на чём вы зарабатываете и где подставляетесь. Большинство сильных компаний застрянет ровно здесь. И будет думать, что всё ок.'
+  },
+  {
+    range: '19–22',
+    name:  'Уровень 3. AI-готовая команда',
+    desc:  'Редкий случай. У вас ИИ — это система, а не привычка одного энтузиаста. Зашит в процессы, есть рамка, есть ответственный, видно отдачу. Таких сейчас единицы. Вопрос только один — удержать отрыв, пока остальные раскачиваются.'
+  }
+];
+
+function getLevel(total) {
+  if (total <= 6)  return 0;
+  if (total <= 13) return 1;
+  if (total <= 18) return 2;
+  return 3;
+}
+
+function pick(q, v, el) {
+  answers[q] = v;
+
+  // update option visuals
+  document.querySelectorAll(`.opt[data-q="${q}"]`).forEach(o => o.classList.remove('sel'));
+  el.classList.add('sel');
+
+  // mark circle done
+  const circle = document.getElementById('qc' + q);
+  if (circle) circle.classList.add('done');
+
+  sync();
+}
+
+function sync() {
+  const answered = Object.keys(answers).length;
+  const pct = (answered / 11) * 100;
+
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-n').textContent   = answered;
+  document.getElementById('footer-cnt').textContent   = answered;
+
+  const btn = document.getElementById('btn-submit');
+  if (answered === 11) {
+    btn.disabled = false;
+    btn.classList.add('active');
+  } else {
+    btn.disabled = true;
+    btn.classList.remove('active');
+  }
+}
+
+function showResults() {
+  const total = Object.values(answers).reduce((a, b) => a + b, 0);
+  const idx   = getLevel(total);
+  const lvl   = LEVELS[idx];
+
+  // score
+  document.getElementById('sv').textContent = total;
+
+  // highlight level row
+  document.querySelectorAll('.lvl').forEach((el, i) => {
+    el.classList.toggle('active', i === idx);
+  });
+
+  // expanded description
+  document.getElementById('ld-badge').textContent = lvl.range + ' баллов';
+  document.getElementById('ld-name').textContent  = lvl.name;
+  document.getElementById('ld-text').textContent  = lvl.desc;
+  document.getElementById('lvl-detail').style.display = 'block';
+
+  // populate hidden fields
+  document.getElementById('f-score').value      = total;
+  document.getElementById('f-level').value      = idx;
+  document.getElementById('f-level-name').value = lvl.name;
+
+  // reveal lead section + divider
+  document.getElementById('results-hr').style.display  = '';
+  document.getElementById('lead-section').style.display = '';
+
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+}
+
+// AJAX form submit to Netlify Forms
+document.getElementById('lead-form').addEventListener('submit', async function (e) {
+  e.preventDefault();
+
+  const name    = document.getElementById('f-name').value.trim();
+  const contact = document.getElementById('f-contact').value.trim();
+  if (!name || !contact) return;
+
+  const btn = document.getElementById('btn-lead');
+  btn.disabled    = true;
+  btn.textContent = 'Отправляем…';
+
+  const body = new URLSearchParams({
+    'form-name':  'ai-leads',
+    'bot-field':  '',
+    name,
+    contact,
+    score:          document.getElementById('f-score').value,
+    level:          document.getElementById('f-level').value,
+    'level-name':   document.getElementById('f-level-name').value,
+  });
+
+  try {
+    await fetch('/', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body:    body.toString(),
+    });
+  } catch (err) {
+    console.error('Form error:', err);
+  }
+
+  document.getElementById('lead-form-wrap').style.display = 'none';
+  document.getElementById('thank-you').style.display      = 'block';
+});
+</script>
+</body>
+</html>

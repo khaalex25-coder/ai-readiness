@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "ai-readiness",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-p", "4200", "-s", "."],
+      "port": 4200
+    }
+  ]
+}
